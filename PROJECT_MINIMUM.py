@@ -14,24 +14,24 @@ SILVER = (192,192,192)
 
 RED = (255, 0, 0)
 ORANGE = (255,165,0)
-YELLOW = (255, 230, 0)
-LIME = (0,255,0)
+YELLOW = (255, 204, 0)
+LIME = (50,205,50)
 GREEN = (0, 128, 0)
-AQUA = (0,255,255)
+LIGHT_BLUE = (130,202,250)
 BLUE = (0,131,255)
 NAVY = (0,0,128)
 PURPLE = (128,0,128)
-PINK = (255,192,203)
+PINK = (240,120,192)
 
-COLORS = [RED,ORANGE,YELLOW,LIME,GREEN,AQUA,BLUE,NAVY,PURPLE,PINK]
+COLORS = [RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
 
 RUNNING_STATE = True
 CLOCK = pygame.time.Clock()
 PROJECT_NAME = "MINIMUM"
 FONT_NAME = pygame.font.match_font('arial')
 
-P_TRANSMIT = 200 #dB
-P_MINIMUM = 75
+P_TRANSMIT = 180 #dB
+P_MINIMUM = 80
 LAMBDA = 1 / 1200
 
 pygame.init()
@@ -53,7 +53,6 @@ CAR_sprite = pygame.sprite.Group()
 def CHECK_DUPLICATE(i,j,list):
     for k in range(len(list)):
         if i == list[k][0] and j == list[k][1]:
-            #print(i,j )
             return 1
     return 0
         
@@ -86,29 +85,29 @@ def check_in_map(left,right,top,bottom):
     
 def determine_base_station(car,BASE_STATIONS,initial): #determine the largest power of base station to connect
     index = -1
-    P_receive = 0
+    P_RECEIVE = 0
     for j in range(len(BASE_STATIONS)):
         base_station = BASE_STATIONS[j]
         frequency = base_station.frequency
         distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)
         path_loss = calculate_path_loss(frequency,distance)
-        P_receive = P_TRANSMIT - path_loss
-        
+        P_RECEIVE = P_TRANSMIT - path_loss
+
         if initial == True: # 第一次呼叫，直接找最大的
-            if(P_receive > car.P_receive):
-                car.P_receive = P_receive
+            if(P_RECEIVE > car.P_RECEIVE):
+                car.P_RECEIVE = P_RECEIVE
                 index = j
+                                
         elif initial == False: # 若小於P_MINIMUM，找當前最大的
-            if P_receive > car.P_receive:
-                if P_receive > P_MINIMUM:
-                    P_receive = P_receive
+            if P_RECEIVE > car.P_RECEIVE:
+                car.P_RECEIVE = P_RECEIVE
+                if P_RECEIVE > P_MINIMUM:
                     index = index
                 else:
-                    P_receive = car.P_receive                
                     index = j
                             
     color = BASE_STATIONS[index].color
-    return index , P_receive , color
+    return index , P_RECEIVE , color
 
 def arrival_probability():
     probability = ((LAMBDA * 1) ** 1) * (math.e ** -(LAMBDA * 1))
@@ -138,10 +137,8 @@ class BASE_STATION(pygame.sprite.Sprite):
         self.frequency = color_index * 100
         self.image.fill(self.color)
         self.rect = self.image.get_rect()
-
         self.rect.x = ( (50+ROAD_WIDTH) * i) + 5
         self.rect.y = ( (50+ROAD_WIDTH) * j) + 5
-        #print(self.rect.x,self.rect.y)
         
         prob = random.randrange(0,4)
         if prob == 0: #left
@@ -167,7 +164,7 @@ class CAR(pygame.sprite.Sprite):
         self.rect.x = i
         self.rect.y = j
         self.direction = direction
-        self.P_receive = 0
+        self.P_RECEIVE = 0
                 
     def check_turn(self,x,y):
         for i in range(10):
@@ -210,7 +207,6 @@ for i in range(10):
         BLOCK_sprite.add(block_temp)
         prob = random.randrange(0,10)
         if(prob == 1):
-            #print(i,j)
             if ( CHECK_DUPLICATE(i,j,COORDINATE) == 0 ):
                 COORDINATE.append( (i,j) )
                 base_station_temp = BASE_STATION(i,j)
@@ -237,7 +233,7 @@ while RUNNING_STATE == True:
                     x = (75 * j) + 50
                     y = 0
                     car_temp = CAR(x,y,0)
-                    index , P_receive , color = determine_base_station(car_temp,BASE_STATIONS,True)
+                    index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS,True)
                     car_temp.current_base_station = index
                     CARS.append(car_temp)
                     CAR_sprite.add(car_temp)
@@ -246,7 +242,7 @@ while RUNNING_STATE == True:
                     x = (75 * j) + 50
                     y = 700
                     car_temp = CAR(x,y,1)
-                    index , P_receive , color = determine_base_station(car_temp,BASE_STATIONS,True)
+                    index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS,True)
                     car_temp.current_base_station = index
                     CARS.append(car_temp)
                     CAR_sprite.add(car_temp)
@@ -255,7 +251,7 @@ while RUNNING_STATE == True:
                     x = 0 
                     y = (75 * j) + 50
                     car_temp = CAR(x,y,2)
-                    index , P_receive , color = determine_base_station(car_temp,BASE_STATIONS,True)
+                    index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS,True)
                     car_temp.current_base_station = index
                     CARS.append(car_temp)
                     CAR_sprite.add(car_temp)
@@ -264,7 +260,7 @@ while RUNNING_STATE == True:
                     x = 700
                     y = (75 * j) + 50
                     car_temp = CAR(x,y,3)
-                    index , P_receive , color = determine_base_station(car_temp,BASE_STATIONS,True)
+                    index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS,True)
                     car_temp.current_base_station = index
                     CARS.append(car_temp)
                     CAR_sprite.add(car_temp)
@@ -281,7 +277,6 @@ while RUNNING_STATE == True:
     BLOCK_sprite.update()
     BASE_STATION_sprite.update()
     CAR_sprite.update()
-    #print(len(CARS))
     
     for car in CARS:
         if check_in_map(car.rect.left , car.rect.right , car.rect.top , car.rect.bottom) == 0:
@@ -289,22 +284,22 @@ while RUNNING_STATE == True:
             CARS.remove(car)            
     
     for base_station in BASE_STATIONS:
-        text = str(base_station.frequency)
-        draw_text(text,16,base_station.rect.centerx,base_station.rect.centery,WHITE)
+        text = str(base_station.frequency) + " MHZ"
+        draw_text(text , 11 , base_station.rect.centerx , base_station.rect.centery , WHITE)
 
     for i in range(len(CARS)):
         car = CARS[i]
         base_station = BASE_STATIONS[0]
-        index , P_receive , color = determine_base_station(car,BASE_STATIONS,False)
+        index , P_RECEIVE , color = determine_base_station(car,BASE_STATIONS,False)
         car.current_base_station = index
         car.color = color
-                        
-        text = str(int(P_receive))
-        #print(largest)
+        
+        P_RECEIVE = round(P_RECEIVE,2)     
+        text = str(P_RECEIVE) + " dB"
         car_pos = (car.rect.centerx , car.rect.centery)
         base_station_pos = ( BASE_STATIONS[index].rect.centerx , BASE_STATIONS[index].rect.centery)
         draw_line(car.color , car_pos , base_station_pos , 1)
-        draw_text(text , 16 , car.rect.x-10 , car.rect.y-10 , car.color)
+        draw_text(text , 14 , car.rect.x+10 , car.rect.y-10 , car.color)
 
     pygame.display.update()
     
