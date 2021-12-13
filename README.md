@@ -1,2 +1,2 @@
 # WIRELESS_COMMUNICATIONS_AND_MOBILE_NETWORKS
-Project of the course
+無線通訊網路project
