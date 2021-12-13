@@ -2,7 +2,7 @@ import pygame
 import random 
 import math
 
-FPS = 80
+FPS = 120
 WINDOW_SIZE = (725,725)
 BLOCK_SIZE = (50,50)
 BASE_STATION_SIZE = (40,40)
@@ -31,7 +31,7 @@ FONT_NAME = pygame.font.match_font('arial')
 
 P_TRANSMIT = 200 #dB
 P_MINIMUM = 75
-LAMBDA = 1 / 1200
+LAMBDA = 1 / 600
 
 pygame.init()
 pygame.display.set_caption(PROJECT_NAME)
