@@ -31,6 +31,7 @@ FONT_NAME = pygame.font.match_font('arial')
 P_TRANSMIT = 200 #dB
 P_MINIMUM = 75
 LAMBDA = 1 / 600
+TOTAL_SWITCH = 0
 
 pygame.init()
 pygame.display.set_caption(PROJECT_NAME)
@@ -279,16 +280,21 @@ while RUNNING_STATE == True:
     for i in range(len(CARS)):
         car = CARS[i]
         base_station = BASE_STATIONS[0]
-        index , P_RECEIVE , color = determine_base_station(car,BASE_STATIONS,False)
-        car.current_base_station = index
+        old_index = car.current_base_station
+        new_index , P_receive , color = determine_base_station(car,BASE_STATIONS,False)
+        car.current_base_station = new_index
         car.color = color
                         
-        P_RECEIVE = round(P_RECEIVE,2)     
-        text = str(P_RECEIVE) + " dB"
+        P_receive = round(P_receive,2)     
+        text = str(P_receive) + " dB"
         car_pos = (car.rect.centerx , car.rect.centery)
-        base_station_pos = ( BASE_STATIONS[index].rect.centerx , BASE_STATIONS[index].rect.centery)
+        base_station_pos = ( BASE_STATIONS[new_index].rect.centerx , BASE_STATIONS[new_index].rect.centery)
         draw_line(car.color , car_pos , base_station_pos , 1)
         draw_text(text , 14 , car.rect.x+10 , car.rect.y-10 , car.color)
+        
+        if(new_index != old_index):
+            TOTAL_SWITCH = TOTAL_SWITCH + 1
+            print("TOTAL SWITCH : ",TOTAL_SWITCH)
 
     pygame.display.update()
     
