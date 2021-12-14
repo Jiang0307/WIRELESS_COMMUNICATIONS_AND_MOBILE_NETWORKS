@@ -3,15 +3,14 @@ import random
 import math
 
 FPS = 80
-WINDOW_SIZE = (725,725)
 BLOCK_SIZE = (50,50)
 BASE_STATION_SIZE = (40,40)
-ROAD_WIDTH = 25
+ROAD_WIDTH = 15
+WINDOW_SIZE = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * 10 - ROAD_WIDTH , (BLOCK_SIZE[1] + ROAD_WIDTH) * 10 - ROAD_WIDTH )
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 SILVER = (192,192,192)
-
 RED = (255, 0, 0)
 ORANGE = (255,165,0)
 YELLOW = (255, 204, 0)
@@ -22,15 +21,14 @@ BLUE = (0,131,255)
 NAVY = (0,0,128)
 PURPLE = (128,0,128)
 PINK = (240,120,192)
-
 COLORS = [RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
 
 RUNNING_STATE = True
 CLOCK = pygame.time.Clock()
-PROJECT_NAME = "THREASHOLD"
+PROJECT_NAME = "MINIMUM"
 FONT_NAME = pygame.font.match_font('arial')
 
-P_TRANSMIT = 200 #dB
+P_TRANSMIT = 120 #dB
 P_THREASHOLD = 80
 LAMBDA = 1 / 1200
 
@@ -146,8 +144,8 @@ class BLOCK(pygame.sprite.Sprite):
         self.image.fill(SILVER)
         self.rect = self.image.get_rect()
 
-        self.rect.x = (50+ROAD_WIDTH) * i 
-        self.rect.y = (50+ROAD_WIDTH) * j 
+        self.rect.x = (BLOCK_SIZE[0]+ROAD_WIDTH) * i
+        self.rect.y = (BLOCK_SIZE[1]+ROAD_WIDTH) * j
     
     def update(self):
         return
@@ -161,18 +159,18 @@ class BASE_STATION(pygame.sprite.Sprite):
         self.frequency = color_index * 100
         self.image.fill(self.color)
         self.rect = self.image.get_rect()
-        self.rect.x = ( (50+ROAD_WIDTH) * i) + 5
-        self.rect.y = ( (50+ROAD_WIDTH) * j) + 5
+        self.rect.x = ( (BLOCK_SIZE[0]+ROAD_WIDTH) * i) + (BLOCK_SIZE[0]-BASE_STATION_SIZE[0])/2
+        self.rect.y = ( (BLOCK_SIZE[1]+ROAD_WIDTH) * j) + (BLOCK_SIZE[1]-BASE_STATION_SIZE[1])/2
         
         prob = random.randrange(0,4)
         if prob == 0: #left
-            self.rect.x = self.rect.x - 5
+            self.rect.x = self.rect.x - (BLOCK_SIZE[0]-BASE_STATION_SIZE[0])/2
         elif prob == 1: #right
-            self.rect.x = self.rect.x + 5
+            self.rect.x = self.rect.x + (BLOCK_SIZE[0]-BASE_STATION_SIZE[0])/2
         elif prob == 2: #up
-            self.rect.y = self.rect.x + 5
+            self.rect.y = self.rect.x + (BLOCK_SIZE[1]-BASE_STATION_SIZE[1])/2
         elif prob == 3: #down
-            self.rect.y = self.rect.y - 5
+            self.rect.y = self.rect.y - (BLOCK_SIZE[1]-BASE_STATION_SIZE[1])/2
                     
     def update(self):
         return
@@ -193,8 +191,8 @@ class CAR(pygame.sprite.Sprite):
     def check_turn(self,x,y):
         for i in range(10):
             for j in range(10):
-                car_x = (75*i) + 50
-                car_y = (75*j) + 50
+                car_x = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * i) + BLOCK_SIZE[0]
+                car_y = ( (BLOCK_SIZE[1] + ROAD_WIDTH) * j) + BLOCK_SIZE[1]
                 if car_x == x and car_y == y:
                     return 1
         return 0
@@ -254,7 +252,7 @@ while RUNNING_STATE == True:
             
             if(i == 0): # DOWN
                 if prob < arrival_prob:
-                    x = (75 * j) + 50
+                    x = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * j ) + BLOCK_SIZE[0]
                     y = 0
                     car_temp = CAR(x,y,0)
                     index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS,True)
@@ -264,8 +262,8 @@ while RUNNING_STATE == True:
                     CAR_SPRITE.add(car_temp)
             elif(i == 1): # UP
                 if prob < arrival_prob:
-                    x = (75 * j) + 50
-                    y = 700
+                    x = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * j ) + BLOCK_SIZE[0]
+                    y = ( BLOCK_SIZE[1] + ROAD_WIDTH ) * 10 - BLOCK_SIZE[1]
                     car_temp = CAR(x,y,1)
                     index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS,True)
                     car_temp.current_base_station = index
@@ -274,7 +272,7 @@ while RUNNING_STATE == True:
             elif(i == 2): # RIGHT
                 if prob < arrival_prob:
                     x = 0 
-                    y = (75 * j) + 50
+                    y = ( (BLOCK_SIZE[1] + ROAD_WIDTH) * j ) + BLOCK_SIZE[1]
                     car_temp = CAR(x,y,2)
                     index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS,True)
                     car_temp.current_base_station = index
@@ -282,8 +280,8 @@ while RUNNING_STATE == True:
                     CAR_SPRITE.add(car_temp)
             elif(i == 3): # LEFT
                 if prob < arrival_prob:
-                    x = 700
-                    y = (75 * j) + 50
+                    x = ( BLOCK_SIZE[0] + ROAD_WIDTH ) * 10 - BLOCK_SIZE[0]
+                    y = ( (BLOCK_SIZE[1] + ROAD_WIDTH) * j ) + BLOCK_SIZE[1]
                     car_temp = CAR(x,y,3)
                     index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS,True)
                     car_temp.current_base_station = index
