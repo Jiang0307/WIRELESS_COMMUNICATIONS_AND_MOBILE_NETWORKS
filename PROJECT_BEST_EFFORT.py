@@ -37,17 +37,16 @@ pygame.init()
 pygame.display.set_caption(PROJECT_NAME)
 screen = pygame.display.set_mode(WINDOW_SIZE)
 
-all_sprite = pygame.sprite.Group()
 # BLOCK
 BLOCKS = []
-BLOCK_sprite = pygame.sprite.Group()
+BLOCK_SPRITE = pygame.sprite.Group()
 # BASE STATION
 BASE_STATIONS = []
-BASE_STATION_sprite = pygame.sprite.Group()
+BASE_STATION_SPRITE = pygame.sprite.Group()
 COORDINATE = []    
 # CAR
 CARS = []
-CAR_sprite = pygame.sprite.Group()
+CAR_SPRITE = pygame.sprite.Group()
 
 def CHECK_DUPLICATE(i,j,list):
     for k in range(len(list)):
@@ -83,19 +82,25 @@ def check_in_map(left,right,top,bottom):
         return 1
     
 def determine_base_station(car,BASE_STATIONS): #determine the largest power of base station to connect
+    P_RECEIVE = 0
+    LARGEST = float("-inf")
     index = -1
     for j in range(len(BASE_STATIONS)):
         base_station = BASE_STATIONS[j]
         frequency = base_station.frequency
         distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)
         path_loss = calculate_path_loss(frequency,distance)
-        CURRENT_P_RECEIVE = P_TRANSMIT - path_loss
+        P_RECEIVE = P_TRANSMIT - path_loss
 
-        if(CURRENT_P_RECEIVE > car.P_RECEIVE):
-            car.P_RECEIVE = CURRENT_P_RECEIVE
+        if P_RECEIVE > LARGEST:
+            LARGEST = P_RECEIVE
             index = j
+
+    P_RECEIVE = LARGEST
     color = BASE_STATIONS[index].color
-    return index , CURRENT_P_RECEIVE , color
+    car.color = color
+    car.P_RECEIVE = P_RECEIVE
+    return index , P_RECEIVE , color
 
 def arrival_probability():
     probability = ((LAMBDA * 1) ** 1) * (math.e ** -(LAMBDA * 1))
@@ -192,14 +197,14 @@ for i in range(10):
     for j in range(10):
         block_temp = BLOCK(i,j)
         BLOCKS.append(block_temp)
-        BLOCK_sprite.add(block_temp)
+        BLOCK_SPRITE.add(block_temp)
         prob = random.randrange(0,10)
         if(prob == 1):
             if ( CHECK_DUPLICATE(i,j,COORDINATE) == 0 ):
                 COORDINATE.append( (i,j) )
                 base_station_temp = BASE_STATION(i,j)
                 BASE_STATIONS.append(base_station_temp)
-                BASE_STATION_sprite.add(base_station_temp)
+                BASE_STATION_SPRITE.add(base_station_temp)
 
 #====================GAME LOOP====================
 while RUNNING_STATE == True:
@@ -222,9 +227,10 @@ while RUNNING_STATE == True:
                     y = 0
                     car_temp = CAR(x,y,0)
                     index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS)
+                    car_temp.color = color
                     car_temp.current_base_station = index
                     CARS.append(car_temp)
-                    CAR_sprite.add(car_temp)
+                    CAR_SPRITE.add(car_temp)
             elif(i == 1): # UP
                 if prob < arrival_prob:
                     x = (75 * j) + 50
@@ -233,7 +239,7 @@ while RUNNING_STATE == True:
                     index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS)
                     car_temp.current_base_station = index
                     CARS.append(car_temp)
-                    CAR_sprite.add(car_temp)
+                    CAR_SPRITE.add(car_temp)
             elif(i == 2): # RIGHT
                 if prob < arrival_prob:
                     x = 0 
@@ -242,7 +248,7 @@ while RUNNING_STATE == True:
                     index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS)
                     car_temp.current_base_station = index
                     CARS.append(car_temp)
-                    CAR_sprite.add(car_temp)
+                    CAR_SPRITE.add(car_temp)
             elif(i == 3): # LEFT
                 if prob < arrival_prob:
                     x = 700
@@ -251,20 +257,18 @@ while RUNNING_STATE == True:
                     index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS)
                     car_temp.current_base_station = index
                     CARS.append(car_temp)
-                    CAR_sprite.add(car_temp)
+                    CAR_SPRITE.add(car_temp)
                     
     #畫面顯示
     screen.fill(WHITE)
-    all_sprite.draw(screen)
-    BLOCK_sprite.draw(screen)
-    BASE_STATION_sprite.draw(screen)
-    CAR_sprite.draw(screen)
+    BLOCK_SPRITE.draw(screen)
+    BASE_STATION_SPRITE.draw(screen)
+    CAR_SPRITE.draw(screen)
     
     #====================UPDATE====================
-    all_sprite.update()
-    BLOCK_sprite.update()
-    BASE_STATION_sprite.update()
-    CAR_sprite.update()
+    BLOCK_SPRITE.update()
+    BASE_STATION_SPRITE.update()
+    CAR_SPRITE.update()
     
     for car in CARS:
         if check_in_map(car.rect.left , car.rect.right , car.rect.top , car.rect.bottom) == 0:
