@@ -34,7 +34,7 @@ PROJECT_NAME = "ENTROPY"
 FONT_NAME = pygame.font.match_font('arial')
 
 P_TRANSMIT = 200 #dB
-ENTROPY = 25 #dB
+ENTROPY = 10 #dB
 LAMBDA = 1 / 1200
 TOTAL_SWITCH = 0
 SPEED = 1
