@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 X = []
 x = 0
 
-FPS = 80
+FPS = 60
 BLOCK_SIZE = (50,50)
 BASE_STATION_SIZE = (40,40)
 ROAD_WIDTH = 10
