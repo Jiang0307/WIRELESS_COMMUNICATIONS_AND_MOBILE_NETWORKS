@@ -6,6 +6,7 @@ FPS = 120
 BLOCK_SIZE = (50,50)
 BASE_STATION_SIZE = (40,40)
 ROAD_WIDTH = 15
+RATIO = BLOCK_SIZE[0] / 2.5
 WINDOW_SIZE = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * 10 - ROAD_WIDTH , (BLOCK_SIZE[1] + ROAD_WIDTH) * 10 - ROAD_WIDTH )
 
 BLACK = (0, 0, 0)
@@ -29,8 +30,10 @@ PROJECT_NAME = "BEST EFFORT"
 FONT_NAME = pygame.font.match_font('arial')
 
 P_TRANSMIT = 120 #dB
-LAMBDA = 1 / 120
+LAMBDA = 1 / 1200
 TOTAL_SWITCH = 0
+SPEED = 1
+print(SPEED)
 
 pygame.init()
 pygame.display.set_caption(PROJECT_NAME)
@@ -68,6 +71,7 @@ def calculate_distance(car_x,car_y,base_station_x,base_station_y):
     delta_x_square = (car_x - base_station_x)**2
     delta_y_square = (car_y - base_station_y)**2
     result = (delta_x_square + delta_y_square)**(1/2)
+    result = result / RATIO
     return result
 
 def calculate_path_loss(frequency, distance):
@@ -182,39 +186,31 @@ class CAR(pygame.sprite.Sprite):
             self.direction = self.direction % 4
         
         if self.direction == 0:
-            self.rect.y += 2
+            self.rect.y += SPEED
         elif self.direction == 1:
-            self.rect.y -= 2
+            self.rect.y -= SPEED
         elif self.direction == 2:
-            self.rect.x += 2
+            self.rect.x += SPEED
         elif self.direction == 3:
-            self.rect.x -= 2       
+            self.rect.x -= SPEED
         
         self.image.fill(self.color)
 
-for i in range(10):
-    for j in range(10):
-        block_temp = BLOCK(i,j)
-        BLOCKS.append(block_temp)
-        BLOCK_SPRITE.add(block_temp)
-        prob = random.randrange(0,10)
-        if(prob == 1):
-            if ( CHECK_DUPLICATE(i,j,COORDINATE) == 0 ):
-                COORDINATE.append( (i,j) )
-                base_station_temp = BASE_STATION(i,j)
-                BASE_STATIONS.append(base_station_temp)
-                BASE_STATION_SPRITE.add(base_station_temp)
+def CREATE_BLOCK_AND_BASE_STATION():
+    for i in range(10):
+        for j in range(10):
+            block_temp = BLOCK(i,j)
+            BLOCKS.append(block_temp)
+            BLOCK_SPRITE.add(block_temp)
+            prob = random.randrange(0,10)
+            if(prob == 1):
+                if ( CHECK_DUPLICATE(i,j,COORDINATE) == 0 ):
+                    COORDINATE.append( (i,j) )
+                    base_station_temp = BASE_STATION(i,j)
+                    BASE_STATIONS.append(base_station_temp)
+                    BASE_STATION_SPRITE.add(base_station_temp)
 
-#====================GAME LOOP====================
-while RUNNING_STATE == True:
-    CLOCK.tick(FPS)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            RUNNING_STATE = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                RUNNING_STATE = False
-    #====================CAR====================
+def CREATE_CAR():        
     for i in range(4):
         for j in range(1,10):
             arrival_prob = arrival_probability()
@@ -257,18 +253,9 @@ while RUNNING_STATE == True:
                     car_temp.current_base_station = index
                     CARS.append(car_temp)
                     CAR_SPRITE.add(car_temp)
-                    
-    #畫面顯示
-    screen.fill(WHITE)
-    BLOCK_SPRITE.draw(screen)
-    BASE_STATION_SPRITE.draw(screen)
-    CAR_SPRITE.draw(screen)
-    
-    #====================UPDATE====================
-    BLOCK_SPRITE.update()
-    BASE_STATION_SPRITE.update()
-    CAR_SPRITE.update()
-    
+
+def UPDATE():
+    global TOTAL_SWITCH
     for car in CARS:
         if check_in_map(car.rect.left , car.rect.right , car.rect.top , car.rect.bottom) == 0:
             car.kill()
@@ -297,6 +284,31 @@ while RUNNING_STATE == True:
             TOTAL_SWITCH = TOTAL_SWITCH + 1
             print("TOTAL SWITCH : ",TOTAL_SWITCH)
 
-    pygame.display.update()
-    
-pygame.quit()
+if __name__ == "__main__":
+    CREATE_BLOCK_AND_BASE_STATION()
+    # GAME LOOP
+    while RUNNING_STATE == True:
+        CLOCK.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                RUNNING_STATE = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    RUNNING_STATE = False
+        # CAR
+        CREATE_CAR()
+        
+        # 畫面顯示
+        screen.fill(WHITE)
+        BLOCK_SPRITE.draw(screen)
+        BASE_STATION_SPRITE.draw(screen)
+        CAR_SPRITE.draw(screen)
+        
+        # UPDATE
+        BLOCK_SPRITE.update()
+        BASE_STATION_SPRITE.update()
+        CAR_SPRITE.update()
+        UPDATE()
+        pygame.display.update()
+        
+    pygame.quit()
