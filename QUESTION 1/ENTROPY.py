@@ -171,7 +171,7 @@ class BASE_STATION(pygame.sprite.Sprite):
         elif prob == 1: #right
             self.rect.x = self.rect.x + (BLOCK_SIZE[0]-BASE_STATION_SIZE[0])/2
         elif prob == 2: #up
-            self.rect.y = self.rect.x + (BLOCK_SIZE[1]-BASE_STATION_SIZE[1])/2
+            self.rect.y = self.rect.y + (BLOCK_SIZE[1]-BASE_STATION_SIZE[1])/2
         elif prob == 3: #down
             self.rect.y = self.rect.y - (BLOCK_SIZE[1]-BASE_STATION_SIZE[1])/2
                     
