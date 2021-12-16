@@ -3,8 +3,8 @@ import random
 import math
 import matplotlib.pyplot as plt
 
-X = []
-x = 0
+CALL_LIST = []
+INTERVAL_LIST = []
 
 FPS = 60
 BLOCK_SIZE = (50,50)
@@ -34,24 +34,17 @@ PROJECT_NAME = "BEST EFFORT"
 FONT_NAME = pygame.font.match_font('arial')
 
 P_TRANSMIT = 120 #dB
-LAMBDA = 1 / 480
+LAMBDA = 1 / 120
 TOTAL_SWITCH = 0
 SPEED = 1
 
-pygame.init()
-pygame.display.set_caption(PROJECT_NAME)
-screen = pygame.display.set_mode(WINDOW_SIZE)
-
-# BLOCK
-BLOCKS = []
 BLOCK_SPRITE = pygame.sprite.Group()
-# BASE STATION
-BASE_STATIONS = []
 BASE_STATION_SPRITE = pygame.sprite.Group()
-COORDINATE = []    
-# CAR
-CARS = []
 CAR_SPRITE = pygame.sprite.Group()
+BLOCKS = []
+BASE_STATIONS = []
+CARS = []
+COORDINATE = []
 
 def CHECK_DUPLICATE(i,j,list):
     for k in range(len(list)):
@@ -125,7 +118,6 @@ def calls_per_hour():
     return x
 def time_intervals(n):
     times = []
-    global x
     for i in range(n):
         if i == 0:
             period = random.gauss(mu = 180, sigma = 40)
@@ -134,8 +126,7 @@ def time_intervals(n):
             end_time = start_time + period
             time = (start_time, end_time)
             times.append(time)
-            X.append(period)
-            x += 1
+            INTERVAL_LIST.append(period)
     else:
         while True:
             count = 0
@@ -151,8 +142,7 @@ def time_intervals(n):
                     count += 1
             if(count == len(times)):
                 times.append(new_time)
-                X.append(period)
-                x += 1
+                INTERVAL_LIST.append(period)
                 break                
     times.sort(key = lambda x: x[0])
     return times
@@ -315,9 +305,9 @@ class CAR(pygame.sprite.Sprite):
         
     def update(self):
         if self.time_count == 0:
-            global x
             self.calls = calls_per_hour()
             self.time_intervals = time_intervals(self.calls)
+            CALL_LIST.append(self.calls)
        
         check = self.check_turn(self.rect.x,self.rect.y)
         if check == 1:
@@ -359,6 +349,10 @@ class CAR(pygame.sprite.Sprite):
         self.image.fill(self.color)
 
 if __name__ == "__main__":
+    pygame.init()
+    pygame.display.set_caption(PROJECT_NAME)
+    screen = pygame.display.set_mode(WINDOW_SIZE)
+    
     CREATE_BLOCK_AND_BASE_STATION()
     #print(len(BASE_STATIONS))
     # GAME LOOP
@@ -385,8 +379,12 @@ if __name__ == "__main__":
         BASE_STATION_SPRITE.update()
         CAR_SPRITE.update()
         pygame.display.update()
-        
     pygame.quit()
     
-    plt.hist(X, bins=x)
+    figure,axes = plt.subplots(2,1,tight_layout=True)
+    figure.canvas.manager.set_window_title("NORMAL DITRIBUTION")
+    axes[0].hist(CALL_LIST , bins=len(CALL_LIST))
+    axes[0].set_title("CALLS PER HOUR")
+    axes[1].hist(INTERVAL_LIST , bins=len(INTERVAL_LIST))
+    axes[1].set_title("AVERAGE CALL TIME")
     plt.show()
