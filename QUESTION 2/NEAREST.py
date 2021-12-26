@@ -335,13 +335,11 @@ class CAR(pygame.sprite.Sprite):
             if self.time_count == self.time_intervals[0][0]:
                 self.color = self.color
                 self.connect = True
-                #print("connect")
             if self.time_count == self.time_intervals[0][1]:
                 self.color = BLACK
                 self.connect = False
                 self.calls -= 1
                 del(self.time_intervals[0])
-                #print("disconnect")
         if self.time_count == 3600:
             self.time_count = 0
         

@@ -134,8 +134,6 @@ class BASE_STATION(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = ( (BLOCK_SIZE[0]+ROAD_WIDTH) * i) + (BLOCK_SIZE[0]-BASE_STATION_SIZE[0])/2
         self.rect.y = ( (BLOCK_SIZE[1]+ROAD_WIDTH) * j) + (BLOCK_SIZE[1]-BASE_STATION_SIZE[1])/2
-        #print(self.rect.x , self.rect.y)
-        print(i,j)
         prob = random.randrange(0,4)
         if prob == 0: #left
             self.rect.x = self.rect.x - (BLOCK_SIZE[0]-BASE_STATION_SIZE[0])/2
@@ -282,11 +280,10 @@ def UPDATE():
         
         if(new_index != old_index):
             TOTAL_SWITCH = TOTAL_SWITCH + 1
-            #print("TOTAL SWITCH : ",TOTAL_SWITCH)
+            print("TOTAL SWITCH : ",TOTAL_SWITCH)
 
 if __name__ == "__main__":
     CREATE_BLOCK_AND_BASE_STATION()
-    print(len(BASE_STATIONS))
     # GAME LOOP
     while RUNNING_STATE == True:
         CLOCK.tick(FPS)

@@ -336,13 +336,11 @@ class CAR(pygame.sprite.Sprite):
             if self.time_count == self.time_intervals[0][0]:
                 self.color = self.color
                 self.connect = True
-                #print("connect")
             if self.time_count == self.time_intervals[0][1]:
                 self.color = BLACK
                 self.connect = False
                 self.calls -= 1
                 del(self.time_intervals[0])
-                #print("disconnect")
         if self.time_count == 3600:
             self.time_count = 0
 
@@ -354,7 +352,6 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode(WINDOW_SIZE)
     
     CREATE_BLOCK_AND_BASE_STATION()
-    #print(len(BASE_STATIONS))
     # GAME LOOP
     while RUNNING_STATE == True:
         CLOCK.tick(FPS)
