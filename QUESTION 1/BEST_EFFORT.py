@@ -27,7 +27,7 @@ COLORS = [RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
 RUNNING_STATE = True
 CLOCK = pygame.time.Clock()
 PROJECT_NAME = "BEST EFFORT"
-FONT_NAME = pygame.font.match_font('arial')
+FONT_NAME = pygame.font.match_font("arial")
 
 P_TRANSMIT = 120 #dB
 LAMBDA = 1 / 1200
@@ -103,6 +103,8 @@ def determine_base_station(car,BASE_STATIONS): #determine the largest power of b
     car.color = color
     car.P_RECEIVE = P_RECEIVE
     return index , P_RECEIVE , color
+
+
 
 def arrival_probability():
     probability = ((LAMBDA * 1) ** 1) * (math.e ** -(LAMBDA * 1))

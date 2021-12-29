@@ -31,7 +31,7 @@ COLORS = [RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
 RUNNING_STATE = True
 CLOCK = pygame.time.Clock()
 PROJECT_NAME = "NEAREST"
-FONT_NAME = pygame.font.match_font('arial')
+FONT_NAME = pygame.font.match_font("arial")
 
 P_TRANSMIT = 120 #dB
 LAMBDA = 1 / 120

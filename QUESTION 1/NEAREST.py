@@ -27,7 +27,7 @@ COLORS = [RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
 RUNNING_STATE = True
 CLOCK = pygame.time.Clock()
 PROJECT_NAME = "NEAREST"
-FONT_NAME = pygame.font.match_font('arial')
+FONT_NAME = pygame.font.match_font("arial")
 
 P_TRANSMIT = 200 #dB
 LAMBDA = 1 / 600
@@ -213,7 +213,7 @@ def CREATE_CAR():
         for j in range(1,10):
             arrival_prob = arrival_probability()
             prob = random.randrange(0, 10**7)
-            
+
             if(i == 0): # DOWN
                 if prob < arrival_prob:
                     x = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * j ) + BLOCK_SIZE[0]

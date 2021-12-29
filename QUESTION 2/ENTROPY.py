@@ -31,7 +31,7 @@ COLORS = [RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
 RUNNING_STATE = True
 CLOCK = pygame.time.Clock()
 PROJECT_NAME = "ENTROPY"
-FONT_NAME = pygame.font.match_font('arial')
+FONT_NAME = pygame.font.match_font("arial")
 
 P_TRANSMIT = 200 #dB
 ENTROPY = 10 #dB
