@@ -122,7 +122,7 @@ def determine_base_station(car,BASE_STATIONS,initial): #determine the largest po
             if P_RECEIVE > LARGEST:
                 LARGEST = P_RECEIVE
                 new_index = j
-        if (LARGEST - CURRENT_P_RECEIVE) > ENTROPY:
+        if ( (LARGEST - CURRENT_P_RECEIVE) > ENTROPY):
             P_RECEIVE = LARGEST
             return_index = new_index
         else:

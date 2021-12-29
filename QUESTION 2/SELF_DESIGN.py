@@ -30,11 +30,13 @@ COLORS = [RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
 
 RUNNING_STATE = True
 CLOCK = pygame.time.Clock()
-PROJECT_NAME = "NEAREST"
+PROJECT_NAME = "SELF DESIGN"
 FONT_NAME = pygame.font.match_font("arial")
 
-P_TRANSMIT = 120 #dB
-LAMBDA = 1 / 120
+P_TRANSMIT = 160  # dB
+P_THREASHOLD = 60 # dB
+ENTROPY = 25      # dB
+LAMBDA = 1 / 600
 TOTAL_SWITCH = 0
 SPEED = 1
   
@@ -81,22 +83,54 @@ def check_in_map(left,right,top,bottom):
         return 1
     
 def determine_base_station(car,BASE_STATIONS,initial): #determine the largest power of base station to connect
-    index = -1
-    nearest_distance = float("inf")
-    for j in range(len(BASE_STATIONS)):
-        base_station = BASE_STATIONS[j]
-        distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)     
-        if distance < nearest_distance:
-            nearest_distance = distance
-            index = j
-    
-    frequency = BASE_STATIONS[index].frequency
-    path_loss = calculate_path_loss(frequency,nearest_distance)
-    P_RECEIVE = P_TRANSMIT - path_loss
-    color = BASE_STATIONS[index].color
-    car.P_RECEIVE = P_RECEIVE
-    
-    return index , P_RECEIVE , color
+    P_RECEIVE = 0
+    LARGEST = float("-inf")
+    old_index = -1
+    new_index = -1
+    return_index = -1
+    if initial == True: # FIND LARGEST
+        for j in range(len(BASE_STATIONS)):
+            base_station = BASE_STATIONS[j]
+            frequency = base_station.frequency
+            distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)
+            path_loss = calculate_path_loss(frequency,distance)
+            P_RECEIVE = P_TRANSMIT - path_loss
+            if P_RECEIVE > LARGEST:
+                LARGEST = P_RECEIVE
+                new_index = j
+        P_RECEIVE = LARGEST
+        return_index = new_index
+    elif initial == False:
+        # FIND CURRENT PR
+        old_index = car.current_base_station
+        frequency = BASE_STATIONS[old_index].frequency
+        base_station_x = BASE_STATIONS[old_index].rect.centerx
+        base_station_y = BASE_STATIONS[old_index].rect.centery
+        distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station_x , base_station_y)
+        path_loss = calculate_path_loss(frequency,distance)
+        CURRENT_P_RECEIVE = P_TRANSMIT - path_loss
+
+        # FIND LARGEST PR AND DETERMINE WHETHER SWITCH TO IT
+        for j in range(len(BASE_STATIONS)): #找最大的PR
+            base_station = BASE_STATIONS[j]
+            frequency = base_station.frequency
+            distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)
+            path_loss = calculate_path_loss(frequency,distance)
+            P_RECEIVE = P_TRANSMIT - path_loss
+            if P_RECEIVE > LARGEST:
+                LARGEST = P_RECEIVE
+                new_index = j
+        if ( (LARGEST - CURRENT_P_RECEIVE) > ENTROPY) and (LARGEST > P_THREASHOLD):
+            P_RECEIVE = LARGEST
+            return_index = new_index
+        else:
+            P_RECEIVE = CURRENT_P_RECEIVE
+            return_index = old_index
+
+    color = BASE_STATIONS[return_index].color
+    car.color = color
+    car.P_RECEIVE = P_RECEIVE      
+    return return_index , P_RECEIVE , color
 
 def arrival_probability():
     probability = ((LAMBDA * 1) ** 1) * (math.e ** -(LAMBDA * 1))
