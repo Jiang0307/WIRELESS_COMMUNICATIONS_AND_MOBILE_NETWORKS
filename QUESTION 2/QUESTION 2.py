@@ -3,48 +3,28 @@ import random
 import math
 import matplotlib.pyplot as plt
 
-CALL_LIST = []
-INTERVAL_LIST = []
-
-FPS = 60
-BLOCK_SIZE = (50,50)
-BASE_STATION_SIZE = (40,40)
-ROAD_WIDTH = 10
-RATIO = BLOCK_SIZE[0] / 2.5
-WINDOW_SIZE = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * 10 - ROAD_WIDTH , (BLOCK_SIZE[1] + ROAD_WIDTH) * 10 - ROAD_WIDTH )
-
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-SILVER = (192,192,192)
-RED = (255, 0, 0)
-ORANGE = (255,165,0)
-YELLOW = (255, 204, 0)
-LIME = (50,205,50)
-GREEN = (0, 128, 0)
-LIGHT_BLUE = (130,202,250)
-BLUE = (0,131,255)
-NAVY = (0,0,128)
-PURPLE = (128,0,128)
-PINK = (240,120,192)
-COLORS = [RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
-
-RUNNING_STATE = True
-CLOCK = pygame.time.Clock()
 PROJECT_NAME = "BEST EFFORT"
 FONT_NAME = pygame.font.match_font("arial")
 
-P_TRANSMIT = 120 #dB
-LAMBDA = 1 / 120
-TOTAL_SWITCH = 0
+FPS = 60
+MODE = 0
+RUNNING_STATE = True
+
+P_THREASHOLD = 65 # MINIMUM
+P_TRANSMIT = 160 # dB
+ENTROPY = 25 # ENTROPY
+LAMBDA = 1 / 1200
 SPEED = 1
 
-BLOCK_SPRITE = pygame.sprite.Group()
-BASE_STATION_SPRITE = pygame.sprite.Group()
-CAR_SPRITE = pygame.sprite.Group()
-BLOCKS = []
-BASE_STATIONS = []
-CARS = []
-COORDINATE = []
+CLOCK = pygame.time.Clock()
+BLOCK_SPRITE = pygame.sprite.Group();BASE_STATION_SPRITE = pygame.sprite.Group();CAR_SPRITE = pygame.sprite.Group()
+HIDE = 0;BEST_EFFORT = 1;MINIMUM = 2;ENTROPY = 3;SELF_DESIGN = 4
+BLOCKS = [];BASE_STATIONS = [];CARS = [];COORDINATE = [];CALL_LIST = [];INTERVAL_LIST = []
+TOTAL_SWITCH_BEST_EFFORT = 0 ; TOTAL_SWITCH_MINIMUM = 0 ; TOTAL_SWITCH_ENTROPY = 0 ; TOTAL_SWITCH_SELF_DESIGN = 0
+BLOCK_SIZE = (50,50) ; BASE_STATION_SIZE = (40,40) ; ROAD_WIDTH = 15 ; RATIO = BLOCK_SIZE[0]/2.5
+BLACK = (0, 0, 0);WHITE=(255, 255, 255) ; SILVER=(192,192,192) ; RED= (255, 0, 0) ; ORANGE=(255,165,0) ; YELLOW=(255, 204, 0) ; LIME=(50,205,50) ; GREEN=(0,128, 0) ; LIGHT_BLUE=(130,202,250) ; BLUE=(0,131,255) ; NAVY=(0,0,128) ; PURPLE=(128,0,128) ; PINK=(240,120,192)
+COLORS=[RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
+WINDOW_SIZE = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * 10 - ROAD_WIDTH , (BLOCK_SIZE[1] + ROAD_WIDTH) * 10 - ROAD_WIDTH )
 
 def CHECK_DUPLICATE(i,j,list):
     for k in range(len(list)):
@@ -79,8 +59,7 @@ def check_in_map(left,right,top,bottom):
         return 0
     else:
         return 1
-    
-def determine_base_station(car,BASE_STATIONS): #determine the largest power of base station to connect
+def determine_base_station_best_effort(car,BASE_STATIONS): #determine the largest power of base station to connect
     P_RECEIVE = 0
     LARGEST = float("-inf")
     index = -1
@@ -97,8 +76,129 @@ def determine_base_station(car,BASE_STATIONS): #determine the largest power of b
 
     P_RECEIVE = LARGEST
     color = BASE_STATIONS[index].color
-    car.P_RECEIVE = P_RECEIVE
-    return index , P_RECEIVE , color
+    #car.color = color
+    car.P_RECEIVE_BEST_EFFORT = P_RECEIVE
+    return index , round(P_RECEIVE,2) , color
+
+def determine_base_station_minimum(car,BASE_STATIONS,initial): #determine the largest power of base station to connect
+    P_RECEIVE = 0
+    LARGEST = float("-inf")
+    old_index = -1
+    new_index = -1
+    return_index = -1
+    if initial == True: # FIND LATGEST
+        for j in range(len(BASE_STATIONS)): 
+            base_station = BASE_STATIONS[j]
+            frequency = base_station.frequency
+            distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)
+            path_loss = calculate_path_loss(frequency,distance)
+            P_RECEIVE = P_TRANSMIT - path_loss
+            if P_RECEIVE > LARGEST:
+                LARGEST = P_RECEIVE
+                new_index = j
+        P_RECEIVE = LARGEST
+        return_index = new_index
+    elif initial == False:
+        # FIND CURRENT PR
+        old_index = car.current_base_station_MINIMUM
+        frequency = BASE_STATIONS[old_index].frequency
+        base_station_x = BASE_STATIONS[old_index].rect.centerx
+        base_station_y = BASE_STATIONS[old_index].rect.centery
+        distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station_x , base_station_y)
+        path_loss = calculate_path_loss(frequency,distance)
+        CURRENT_P_RECEIVE = P_TRANSMIT - path_loss
+
+        # FIND LARGEST PR AND DETERMINE WHETHER SWITCH TO IT
+        for j in range(len(BASE_STATIONS)): #找最大的PR
+            base_station = BASE_STATIONS[j]
+            frequency = base_station.frequency
+            distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)
+            path_loss = calculate_path_loss(frequency,distance)
+            P_RECEIVE = P_TRANSMIT - path_loss
+            if P_RECEIVE > LARGEST:
+                LARGEST = P_RECEIVE
+                new_index = j
+
+        if CURRENT_P_RECEIVE > P_THREASHOLD:
+            P_RECEIVE = CURRENT_P_RECEIVE
+            return_index = old_index
+        else:
+            P_RECEIVE = LARGEST
+            return_index = new_index
+
+    color = BASE_STATIONS[return_index].color
+    #car.color = color
+    car.P_RECEIVE_MINIMUM = P_RECEIVE      
+    return return_index , round(P_RECEIVE,2) , color
+
+def determine_base_station_entropy(car,BASE_STATIONS,initial): #determine the largest power of base station to connect
+    P_RECEIVE = 0
+    LARGEST = float("-inf")
+    old_index = -1
+    new_index = -1
+    return_index = -1
+    if initial == True: # FIND LARGEST
+        for j in range(len(BASE_STATIONS)):
+            base_station = BASE_STATIONS[j]
+            frequency = base_station.frequency
+            distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)
+            path_loss = calculate_path_loss(frequency,distance)
+            P_RECEIVE = P_TRANSMIT - path_loss
+            if P_RECEIVE > LARGEST:
+                LARGEST = P_RECEIVE
+                new_index = j
+        P_RECEIVE = LARGEST
+        return_index = new_index
+    elif initial == False:
+        # FIND CURRENT PR
+        old_index = car.current_base_station_ENTROPY
+        frequency = BASE_STATIONS[old_index].frequency
+        base_station_x = BASE_STATIONS[old_index].rect.centerx
+        base_station_y = BASE_STATIONS[old_index].rect.centery
+        distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station_x , base_station_y)
+        path_loss = calculate_path_loss(frequency,distance)
+        CURRENT_P_RECEIVE = P_TRANSMIT - path_loss
+
+        # FIND LARGEST PR AND DETERMINE WHETHER SWITCH TO IT
+        for j in range(len(BASE_STATIONS)): #找最大的PR
+            base_station = BASE_STATIONS[j]
+            frequency = base_station.frequency
+            distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)
+            path_loss = calculate_path_loss(frequency,distance)
+            P_RECEIVE = P_TRANSMIT - path_loss
+            if P_RECEIVE > LARGEST:
+                LARGEST = P_RECEIVE
+                new_index = j
+        if (LARGEST - CURRENT_P_RECEIVE) > ENTROPY:
+            P_RECEIVE = LARGEST
+            return_index = new_index
+        else:
+            P_RECEIVE = CURRENT_P_RECEIVE
+            return_index = old_index
+
+    color = BASE_STATIONS[return_index].color
+    #car.color = color
+    car.P_RECEIVE_ENTROPY = P_RECEIVE
+    return return_index , round(P_RECEIVE,2) , color
+
+def determine_base_station_self_design(car,BASE_STATIONS,initial): # determine the largest power of base station to connect
+    index = -1
+    nearest_distance = float("inf")
+    for j in range(len(BASE_STATIONS)): 
+        base_station = BASE_STATIONS[j]
+        distance = calculate_distance(car.rect.centerx , car.rect.centery , base_station.rect.centerx , base_station.rect.centery)     
+        if distance < nearest_distance:
+            nearest_distance = distance
+            index = j
+    
+    frequency = BASE_STATIONS[index].frequency
+    path_loss = calculate_path_loss(frequency,nearest_distance)
+    P_RECEIVE = P_TRANSMIT - path_loss
+    color = BASE_STATIONS[index].color
+    #car.color = color
+    car.P_RECEIVE_SELF_DESIGN = P_RECEIVE
+    
+    return index , round(P_RECEIVE,2) , color
 
 def arrival_probability():
     probability = ((LAMBDA * 1) ** 1) * (math.e ** -(LAMBDA * 1))
@@ -172,9 +272,12 @@ def CREATE_CAR():
                     x = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * j ) + BLOCK_SIZE[0]
                     y = 0
                     car_temp = CAR(x,y,0)
-                    index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS)
-                    car_temp.color = BLACK
-                    car_temp.current_base_station = index
+                    
+                    index_BEST_EFFORT , P_RECEIVE_BEST_EFFORT , color_BEST_EFFORT = determine_base_station_best_effort(car_temp,BASE_STATIONS)
+                    index_MINIMUM , P_RECEIVE_MINIMUM , color_MINIMUM = determine_base_station_minimum(car_temp,BASE_STATIONS,True)
+                    index_BEST_ENTROPY , P_RECEIVE_BEST_ENTROPY , color_ENTROPY = determine_base_station_entropy(car_temp,BASE_STATIONS,True)
+                    index_BEST_SELF_DESIGN , P_RECEIVE_SELF_DESIGN , color_SELF_DESIGN = determine_base_station_self_design(car_temp,BASE_STATIONS,True)
+                    
                     CARS.append(car_temp)
                     CAR_SPRITE.add(car_temp)
             elif(i == 1): # UP
@@ -182,9 +285,12 @@ def CREATE_CAR():
                     x = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * j ) + BLOCK_SIZE[0]
                     y = ( BLOCK_SIZE[1] + ROAD_WIDTH ) * 10 - BLOCK_SIZE[1]
                     car_temp = CAR(x,y,1)
-                    index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS)
-                    car_temp.color = BLACK
-                    car_temp.current_base_station = index
+                    
+                    index_BEST_EFFORT , P_RECEIVE_BEST_EFFORT , color_BEST_EFFORT = determine_base_station_best_effort(car_temp,BASE_STATIONS)
+                    index_MINIMUM , P_RECEIVE_MINIMUM , color_MINIMUM = determine_base_station_minimum(car_temp,BASE_STATIONS,True)
+                    index_BEST_ENTROPY , P_RECEIVE_BEST_ENTROPY , color_ENTROPY = determine_base_station_entropy(car_temp,BASE_STATIONS,True)
+                    index_BEST_SELF_DESIGN , P_RECEIVE_SELF_DESIGN , color_SELF_DESIGN = determine_base_station_self_design(car_temp,BASE_STATIONS,True)
+                    
                     CARS.append(car_temp)
                     CAR_SPRITE.add(car_temp)
             elif(i == 2): # RIGHT
@@ -192,9 +298,12 @@ def CREATE_CAR():
                     x = 0 
                     y = ( (BLOCK_SIZE[1] + ROAD_WIDTH) * j ) + BLOCK_SIZE[1]
                     car_temp = CAR(x,y,2)
-                    index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS)
-                    car_temp.color = BLACK
-                    car_temp.current_base_station = index
+                    
+                    index_BEST_EFFORT , P_RECEIVE_BEST_EFFORT , color_BEST_EFFORT = determine_base_station_best_effort(car_temp,BASE_STATIONS)
+                    index_MINIMUM , P_RECEIVE_MINIMUM , color_MINIMUM = determine_base_station_minimum(car_temp,BASE_STATIONS,True)
+                    index_BEST_ENTROPY , P_RECEIVE_BEST_ENTROPY , color_ENTROPY = determine_base_station_entropy(car_temp,BASE_STATIONS,True)
+                    index_BEST_SELF_DESIGN , P_RECEIVE_SELF_DESIGN , color_SELF_DESIGN = determine_base_station_self_design(car_temp,BASE_STATIONS,True)
+                    
                     CARS.append(car_temp)
                     CAR_SPRITE.add(car_temp)
             elif(i == 3): # LEFT
@@ -202,14 +311,17 @@ def CREATE_CAR():
                     x = ( BLOCK_SIZE[0] + ROAD_WIDTH ) * 10 - BLOCK_SIZE[0]
                     y = ( (BLOCK_SIZE[1] + ROAD_WIDTH) * j ) + BLOCK_SIZE[1]
                     car_temp = CAR(x,y,3)
-                    index , P_RECEIVE , color = determine_base_station(car_temp,BASE_STATIONS)
-                    car_temp.color = BLACK
-                    car_temp.current_base_station = index
+                    
+                    index_BEST_EFFORT , P_RECEIVE_BEST_EFFORT , color_BEST_EFFORT = determine_base_station_best_effort(car_temp,BASE_STATIONS)
+                    index_MINIMUM , P_RECEIVE_MINIMUM , color_MINIMUM = determine_base_station_minimum(car_temp,BASE_STATIONS,True)
+                    index_BEST_ENTROPY , P_RECEIVE_BEST_ENTROPY , color_ENTROPY = determine_base_station_entropy(car_temp,BASE_STATIONS,True)
+                    index_BEST_SELF_DESIGN , P_RECEIVE_SELF_DESIGN , color_SELF_DESIGN = determine_base_station_self_design(car_temp,BASE_STATIONS,True)
+                    
                     CARS.append(car_temp)
                     CAR_SPRITE.add(car_temp)
 
 def UPDATE():
-    global TOTAL_SWITCH
+    global TOTAL_SWITCH_BEST_EFFORT , TOTAL_SWITCH_MINIMUM , TOTAL_SWITCH_ENTROPY , TOTAL_SWITCH_SELF_DESIGN , MODE
     for car in CARS:
         if check_in_map(car.rect.left , car.rect.right , car.rect.top , car.rect.bottom) == 0:
             car.kill()
@@ -222,20 +334,64 @@ def UPDATE():
     for i in range(len(CARS)):
         car = CARS[i]
         if car.connect == True:
-            old_index = car.current_base_station
-            new_index , P_receive , color = determine_base_station(car,BASE_STATIONS)
-            car.current_base_station = new_index
-            car.color = color
             
-            P_receive = round(P_receive,2)     
-            text = str(P_receive) + " dB"
-            car_pos = (car.rect.centerx , car.rect.centery)
-            base_station_pos = ( BASE_STATIONS[new_index].rect.centerx , BASE_STATIONS[new_index].rect.centery)
-            draw_line(car.color , car_pos , base_station_pos , 1)
-            draw_text(text , 14 , car.rect.x+10 , car.rect.y-10 , car.color)
-            if(new_index != old_index):
-                TOTAL_SWITCH = TOTAL_SWITCH + 1
-                print("TOTAL SWITCH : ",TOTAL_SWITCH)
+            old_index_BEST_EFFORT = car.current_base_station_BEST_EFFORT
+            old_index_MINIMUM = car.current_base_station_MINIMUM
+            old_index_ENTROPY = car.current_base_station_ENTROPY
+            old_index_SELF_DESIGN = car.current_base_station_SELF_DESIGN
+            
+            new_index_BEST_EFFORT , P_RECEIVE_BEST_EFFORT , color_BEST_EFFORT = determine_base_station_best_effort(car,BASE_STATIONS)
+            new_index_MINIMUM , P_RECEIVE_MINIMUM , color_MINIMUM = determine_base_station_minimum(car,BASE_STATIONS,False)
+            new_index_ENTROPY , P_RECEIVE_ENTROPY , color_ENTROPY = determine_base_station_entropy(car,BASE_STATIONS,False)
+            new_index_SELF_DESIGN , P_RECEIVE_SELF_DESIGN , color_SELF_DESIGN = determine_base_station_self_design(car,BASE_STATIONS,False)
+            
+            car.current_base_station_BEST_EFFORT = new_index_BEST_EFFORT
+            car.current_base_station_MINIMUM = new_index_MINIMUM
+            car.current_base_station_ENTROPY = new_index_ENTROPY
+            car.current_base_station_SELF_DESIGN = new_index_SELF_DESIGN
+
+            if (MODE != 0):
+                if (MODE == BEST_EFFORT):
+                    car.color = color_BEST_EFFORT
+                    text = str(P_RECEIVE_BEST_EFFORT) + " dB"
+                    car_pos = (car.rect.centerx , car.rect.centery)
+                    base_station_pos = ( BASE_STATIONS[new_index_BEST_EFFORT].rect.centerx , BASE_STATIONS[new_index_BEST_EFFORT].rect.centery)  
+                    draw_line(car.color , car_pos , base_station_pos , 1)
+                    draw_text(text , 14 , car.rect.x+10 , car.rect.y-10 , car.color)
+                elif (MODE == MINIMUM):
+                    car.color = color_MINIMUM
+                    text = str(P_RECEIVE_MINIMUM) + " dB"
+                    car_pos = (car.rect.centerx , car.rect.centery)
+                    base_station_pos = ( BASE_STATIONS[new_index_MINIMUM].rect.centerx , BASE_STATIONS[new_index_MINIMUM].rect.centery)  
+                    draw_line(car.color , car_pos , base_station_pos , 1)
+                    draw_text(text , 14 , car.rect.x+10 , car.rect.y-10 , car.color)
+                elif (MODE == ENTROPY):
+                    car.color = color_ENTROPY
+                    text = str(P_RECEIVE_ENTROPY) + " dB"
+                    car_pos = (car.rect.centerx , car.rect.centery)
+                    base_station_pos = ( BASE_STATIONS[new_index_ENTROPY].rect.centerx , BASE_STATIONS[new_index_ENTROPY].rect.centery)  
+                    draw_line(car.color , car_pos , base_station_pos , 1)
+                    draw_text(text , 14 , car.rect.x+10 , car.rect.y-10 , car.color)
+                elif (MODE == SELF_DESIGN):
+                    car.color = color_SELF_DESIGN
+                    text = str(P_RECEIVE_SELF_DESIGN) + " dB"
+                    car_pos = (car.rect.centerx , car.rect.centery)
+                    base_station_pos = ( BASE_STATIONS[new_index_SELF_DESIGN].rect.centerx , BASE_STATIONS[new_index_SELF_DESIGN].rect.centery)  
+                    draw_line(car.color , car_pos , base_station_pos , 1)
+                    draw_text(text , 14 , car.rect.x+10 , car.rect.y-10 , car.color)
+            else:
+                car.color = BLACK
+            
+            if(new_index_BEST_EFFORT != old_index_BEST_EFFORT):
+                TOTAL_SWITCH_BEST_EFFORT += 1
+            if(new_index_MINIMUM != old_index_MINIMUM):
+                TOTAL_SWITCH_MINIMUM += 1
+            if(new_index_ENTROPY != old_index_ENTROPY):
+                TOTAL_SWITCH_ENTROPY += 1
+            if(new_index_SELF_DESIGN != old_index_SELF_DESIGN):
+                TOTAL_SWITCH_SELF_DESIGN += 1        
+            if (new_index_BEST_EFFORT != old_index_BEST_EFFORT) or (new_index_MINIMUM != old_index_MINIMUM) or (new_index_ENTROPY != old_index_ENTROPY) or (new_index_SELF_DESIGN != old_index_SELF_DESIGN):
+                print("TOTAL SWITCH | ","BEST EFFORT : ",TOTAL_SWITCH_BEST_EFFORT,"    MINIMUM : ",TOTAL_SWITCH_MINIMUM,"    ENTROPY : ",TOTAL_SWITCH_ENTROPY,"    SELF DESIGN : ",TOTAL_SWITCH_SELF_DESIGN)
 
 class BLOCK(pygame.sprite.Sprite):
     def __init__(self,i,j):
@@ -280,14 +436,22 @@ class CAR(pygame.sprite.Sprite):
     def __init__(self,i,j,direction):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((ROAD_WIDTH,ROAD_WIDTH))
-        self.current_base_station = -1
         self.color = BLACK
         self.image.fill(self.color)
         self.rect = self.image.get_rect()  
         self.rect.x = i
         self.rect.y = j
         self.direction = direction
-        self.P_RECEIVE = float("-inf")
+
+        self.P_RECEIVE_BEST_EFFORT = float("-inf")
+        self.P_RECEIVE_MINIMUM = 0
+        self.P_RECEIVE_ENTROPY = 0
+        self.P_RECEIVE_SELF_DESIGN = 0
+
+        self.current_base_station_BEST_EFFORT = -1
+        self.current_base_station_MINIMUM = -1
+        self.current_base_station_ENTROPY = -1
+        self.current_base_station_SELF_DESIGN = -1
         # new variables
         self.time_count = 0
         self.calls = 0
@@ -361,15 +525,23 @@ if __name__ == "__main__":
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     RUNNING_STATE = False
+                elif event.key == pygame.K_0:
+                    MODE = HIDE            
+                elif event.key == pygame.K_1:
+                    MODE = BEST_EFFORT
+                elif event.key == pygame.K_2:
+                    MODE = MINIMUM
+                elif event.key == pygame.K_3:
+                    MODE = ENTROPY
+                elif event.key == pygame.K_4:
+                    MODE = SELF_DESIGN
         # CAR
         CREATE_CAR()
-        
         # 畫面顯示
         screen.fill(WHITE)
         BLOCK_SPRITE.draw(screen)
         BASE_STATION_SPRITE.draw(screen)
         CAR_SPRITE.draw(screen)
-        
         # UPDATE
         UPDATE()
         BLOCK_SPRITE.update()

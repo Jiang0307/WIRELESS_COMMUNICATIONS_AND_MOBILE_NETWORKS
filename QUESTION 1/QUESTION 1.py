@@ -2,40 +2,29 @@ import pygame
 import random 
 import math
 
-MODE = 0
-HIDE = 0;BEST_EFFORT = 1;MINIMUM = 2;ENTROPY = 3;SELF_DESIGN = 4
-FPS = 60
-BLOCK_SIZE = (50,50);BASE_STATION_SIZE = (40,40);ROAD_WIDTH = 15;RATIO = BLOCK_SIZE[0]/2.5;
-WINDOW_SIZE = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * 10 - ROAD_WIDTH , (BLOCK_SIZE[1] + ROAD_WIDTH) * 10 - ROAD_WIDTH )
-BLACK = (0, 0, 0);WHITE=(255, 255, 255);SILVER=(192,192,192);RED= (255, 0, 0);ORANGE=(255,165,0);YELLOW=(255, 204, 0);LIME=(50,205,50);GREEN=(0,128, 0);LIGHT_BLUE=(130,202,250);BLUE=(0,131,255);NAVY=(0,0,128);PURPLE=(128,0,128);PINK=(240,120,192);
-COLORS=[RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
-RUNNING_STATE = True
-CLOCK = pygame.time.Clock()
 PROJECT_NAME = "BEST EFFORT"
 FONT_NAME = pygame.font.match_font("arial")
 
-P_TRANSMIT = 160 #dB
+FPS = 60
+MODE = 0
+RUNNING_STATE = True
+
+P_THREASHOLD = 60 # MINIMUM
+P_TRANSMIT = 160 # dB
+ENTROPY = 25 # ENTROPY
 LAMBDA = 1 / 1200
 SPEED = 1
-TOTAL_SWITCH_BEST_EFFORT = 0;TOTAL_SWITCH_MINIMUM = 0;TOTAL_SWITCH_ENTROPY = 0;TOTAL_SWITCH_SELF_DESIGN = 0
 
-P_THREASHOLD = 65 #MINIMUM
-ENTROPY = 25 #ENTROPY
+CLOCK = pygame.time.Clock()
+BLOCK_SPRITE = pygame.sprite.Group();BASE_STATION_SPRITE = pygame.sprite.Group();CAR_SPRITE = pygame.sprite.Group()
+HIDE = 0;BEST_EFFORT = 1;MINIMUM = 2;ENTROPY = 3;SELF_DESIGN = 4
+BLOCKS = [];BASE_STATIONS = [];CARS = [];COORDINATE = []
+TOTAL_SWITCH_BEST_EFFORT = 0 ; TOTAL_SWITCH_MINIMUM = 0 ; TOTAL_SWITCH_ENTROPY = 0 ; TOTAL_SWITCH_SELF_DESIGN = 0
+BLOCK_SIZE = (50,50) ; BASE_STATION_SIZE = (40,40) ; ROAD_WIDTH = 15 ; RATIO = BLOCK_SIZE[0]/2.5
+BLACK = (0, 0, 0);WHITE=(255, 255, 255) ; SILVER=(192,192,192) ; RED= (255, 0, 0) ; ORANGE=(255,165,0) ; YELLOW=(255, 204, 0) ; LIME=(50,205,50) ; GREEN=(0,128, 0) ; LIGHT_BLUE=(130,202,250) ; BLUE=(0,131,255) ; NAVY=(0,0,128) ; PURPLE=(128,0,128) ; PINK=(240,120,192)
+COLORS=[RED,ORANGE,YELLOW,LIME,GREEN,LIGHT_BLUE,BLUE,NAVY,PURPLE,PINK]
+WINDOW_SIZE = ( (BLOCK_SIZE[0] + ROAD_WIDTH) * 10 - ROAD_WIDTH , (BLOCK_SIZE[1] + ROAD_WIDTH) * 10 - ROAD_WIDTH )
 
-pygame.init()
-pygame.display.set_caption(PROJECT_NAME)
-screen = pygame.display.set_mode(WINDOW_SIZE)
-
-# BLOCK
-BLOCKS = []
-BLOCK_SPRITE = pygame.sprite.Group()
-# BASE STATION
-BASE_STATIONS = []
-BASE_STATION_SPRITE = pygame.sprite.Group()
-COORDINATE = []    
-# CAR
-CARS = []
-CAR_SPRITE = pygame.sprite.Group()
 
 def CHECK_DUPLICATE(i,j,list):
     for k in range(len(list)):
@@ -384,7 +373,6 @@ def CREATE_CAR():
 
 def UPDATE():
     global TOTAL_SWITCH_BEST_EFFORT , TOTAL_SWITCH_MINIMUM , TOTAL_SWITCH_ENTROPY , TOTAL_SWITCH_SELF_DESIGN , MODE
-    
     for car in CARS:
         if check_in_map(car.rect.left , car.rect.right , car.rect.top , car.rect.bottom) == 0:
             car.kill()
@@ -396,7 +384,7 @@ def UPDATE():
 
     for i in range(len(CARS)):
         car = CARS[i]
-        base_station = BASE_STATIONS[0]
+        #base_station = BASE_STATIONS[0]
         
         old_index_BEST_EFFORT = car.current_base_station_BEST_EFFORT
         old_index_MINIMUM = car.current_base_station_MINIMUM
@@ -442,6 +430,8 @@ def UPDATE():
                 base_station_pos = ( BASE_STATIONS[new_index_SELF_DESIGN].rect.centerx , BASE_STATIONS[new_index_SELF_DESIGN].rect.centery)  
                 draw_line(car.color , car_pos , base_station_pos , 1)
                 draw_text(text , 14 , car.rect.x+10 , car.rect.y-10 , car.color)
+        else:
+            car.color = BLACK
         
         if(new_index_BEST_EFFORT != old_index_BEST_EFFORT):
             TOTAL_SWITCH_BEST_EFFORT += 1
@@ -455,6 +445,9 @@ def UPDATE():
             print("TOTAL SWITCH | ","BEST EFFORT : ",TOTAL_SWITCH_BEST_EFFORT,"    MINIMUM : ",TOTAL_SWITCH_MINIMUM,"    ENTROPY : ",TOTAL_SWITCH_ENTROPY,"    SELF DESIGN : ",TOTAL_SWITCH_SELF_DESIGN)
 
 if __name__ == "__main__":
+    pygame.init()
+    pygame.display.set_caption(PROJECT_NAME)
+    screen = pygame.display.set_mode(WINDOW_SIZE)
     CREATE_BLOCK_AND_BASE_STATION()
     # GAME LOOP
     while RUNNING_STATE == True:
@@ -465,7 +458,9 @@ if __name__ == "__main__":
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     RUNNING_STATE = False
-                if event.key == pygame.K_1:
+                elif event.key == pygame.K_0:
+                    MODE = HIDE            
+                elif event.key == pygame.K_1:
                     MODE = BEST_EFFORT
                 elif event.key == pygame.K_2:
                     MODE = MINIMUM
@@ -473,16 +468,13 @@ if __name__ == "__main__":
                     MODE = ENTROPY
                 elif event.key == pygame.K_4:
                     MODE = SELF_DESIGN
-
         # CAR
         CREATE_CAR()
-        
         # 畫面顯示
         screen.fill(WHITE)
         BLOCK_SPRITE.draw(screen)
         BASE_STATION_SPRITE.draw(screen)
         CAR_SPRITE.draw(screen)
-        
         # UPDATE
         BLOCK_SPRITE.update()
         BASE_STATION_SPRITE.update()
